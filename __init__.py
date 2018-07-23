@@ -8,7 +8,7 @@ import Gen2functions
 app = Flask(__name__)
 
 
-
+# simple decoder
 @app.route('/validatehex', methods=['GET','POST'])
 def validatehex():
     ret_data =  str(request.args.get('hexcode')).strip()
