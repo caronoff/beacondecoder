@@ -1,4 +1,7 @@
 from flask import Flask, jsonify,request, render_template, Markup, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+
+
 import re
 import decodehex2
 import definitions
@@ -6,7 +9,8 @@ import sys
 import Gen2secondgen as Gen2
 import Gen2functions
 app = Flask(__name__)
-
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+db = SQLAlchemy(app)
 
 # simple decoder
 @app.route('/validatehex', methods=['GET','POST'])
