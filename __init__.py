@@ -6,6 +6,7 @@ import re
 import decodehex2
 import definitions
 import sys
+import os
 import Gen2secondgen as Gen2
 import Gen2functions
 app = Flask(__name__)
