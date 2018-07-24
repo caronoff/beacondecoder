@@ -34,11 +34,11 @@ COUNTRIES.sort()
 
 
 
-@app.route('/add/')
-def webhook():
-    name = "ram"
+@app.route('/add/<username>')
+def webhook(username):
+    name = username
     email = "ram@ram.com"
-    u = User(id = 5, nickname = name, email = email)
+    u = User(id = id, nickname = name, email = email)
     print("user created", u)
     db.session.add(u)
     db.session.commit()
