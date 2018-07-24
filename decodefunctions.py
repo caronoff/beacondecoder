@@ -7,7 +7,23 @@
 import definitions
 import time
 
+
 # updated July 12, 2017
+
+
+BAUDOT={
+            '111000':'A','110011':'B','101110':'C','110010':'D','110000':'E'
+            ,'110110':'F','101011':'G','100101':'H','101100':'I','111010':'J'
+            ,'111110':'K','101001':'L','100111':'M','100110':'N','100011':'O'
+            ,'101101':'P','111101':'Q','101010':'R','110100':'S','100001':'T'
+            ,'111100':'U','101111':'V','111001':'W','110111':'X','110101':'Y'
+            ,'110001':'Z','100100':' ','011000':'-','010111':'/','001101':'0'
+            ,'011101':'1','011001':'2','010000':'3','001010':'4','000001':'5'
+            ,'010101':'6','011100':'7','001100':'8','000011':'9','010110':'?'
+            ,'000000':'?','100000':''
+            }
+
+
 
 def calcbch(binary,gx,b1start,b1end,b2end):        
     bchlist=list(binary[b1start:b1end] +'0'*(b2end-b1end))    
@@ -32,6 +48,7 @@ def is_number(s):
 
 def dec2bin(n,ln=None):
     '''convert denary integer n to binary string bStr'''
+    n=int(n)
     bStr = ''
     
     if n < 0:
@@ -57,25 +74,26 @@ def is_neg(s):
 def  bin2dec(s):
     return int(s, 2)
 
-def bin2hex(binval):
+def bin2hex2(binval):
     return str(hex(int(binval, 2)))[2:].upper().strip('L')
 
 def hextobin(hexval):
-        '''
-        Takes a string representation of hex data with
-        arbitrary length and converts to string representation
-        of binary.  Includes padding 0s
-        '''
-        thelen = len(hexval)*4
-        hexval=str(hexval)
-        
-        try:
-            binval = bin(int(hexval, 16))[2:]
-        except ValueError:
-            return False
-        while ((len(binval)) < thelen):
-            binval = '0' + binval
-        return binval
+    '''
+    Takes a string representation of hex data with
+    arbitrary length and converts to string representation
+    of binary.  Includes padding 0s
+    '''
+    thelen = len(hexval)*4
+    hexval=str(hexval)
+
+    try:
+        binval = bin(int(hexval, 16))[2:]
+    except ValueError:
+        return False
+    while ((len(binval)) < thelen):
+        binval = '0' + binval
+    return binval
+
 
 
 def baudot(binstr,startpos,endpos,short=False):
@@ -86,17 +104,7 @@ def baudot(binstr,startpos,endpos,short=False):
         jump=6
         one=''
     #baudot string values are 6 bit length binary with following code reference
-    baudot={
-            '111000':'A','110011':'B','101110':'C','110010':'D','110000':'E'
-            ,'110110':'F','101011':'G','100101':'H','101100':'I','111010':'J'
-            ,'111110':'K','101001':'L','100111':'M','100110':'N','100011':'O'
-            ,'101101':'P','111101':'Q','101010':'R','110100':'S','100001':'T'
-            ,'111100':'U','101111':'V','111001':'W','110111':'X','110101':'Y'
-            ,'110001':'Z','100100':' ','011000':'-','010111':'/','001101':'0'
-            ,'011101':'1','011001':'2','010000':'3','001010':'4','000001':'5'
-            ,'010101':'6','011100':'7','001100':'8','000011':'9','010110':'?'
-            ,'000000':'?','100000':''
-            }    
+    baudot= BAUDOT
     baudstr=b=''
       
     while startpos < endpos:
@@ -270,6 +278,19 @@ def latitude(latsono,latdeg,latmin):
     
     return (lat,decimal,latdir,minutes)
 
+
+def bin2hex(binval):
+    """Convert binary to hexadecimal
+
+    Args:
+        binval (str): binary data in string format
+    Returns:
+        hex_str (str): hexadecimal string    """
+
+    hex_str = '{:0{}X}'.format(int(binval, 2), len(binval) // 4)
+
+    return hex_str
+
 def longitude(longeswe,longdeg,longmin):
     n=1
     if longeswe=='0':
@@ -320,9 +341,19 @@ def samplehex():
     c='0000000110000010110000001000001111001011010011010000011011011110011011100011100000001111000101110110011'
     return bin2hex(b+c),len(b+c)
     
-x=hextobin('8CD724C83949AC4D9716778EA03CC0')
+x=hextobin('0014807B4F2050000078000296BD4A055543FFF003FFFFFFE70D6276D19141A')
 y=bin2hex('100011001101011100100100110010000011100101001001101011000100110110010111000101100111011110001110101000000001110011000000')
 z=bin2hex('101001011011110100000001001101001001111111000011111100101101101001011011110100000001001101001001111111000011111000001111')
-x=bin2hex('101001011011110100000001001101001001111111000011111100101101110100010010001101111001001101001001111111000011001001111111')
-w=bin2hex('100110010001110101000001001101001001111111000011111100101101110100001001001101010111101011001001111111000011010101010000')
-#print w
+#x=bin2hex('101001011011110100000001001101001001111111000011111100101101110100010010001101111001001101001001111111000011001001111111')
+w=bin2hex(
+    '''
+000000000001010010000000011110110100111100100000010100000000000000000000011110000000000000000010100101101011110101001010000001010101010101000011111111111111111100000011111111111111111111111111111001110000110101100010011101101101000110010001010000011010
+
+''')
+print(x)
+print(w)
+canmsg='0014807B4F2050000078000296BD4A055543FFFF03FFFFFFE70D6276D19141A'
+sgb15hex=hextobin('A794001ED415C6773AC95C1')
+print(len(sgb15hex[:44]+'0'*16))
+print(bin2hex(sgb15hex[:60]))
+print(bin2hex(sgb15hex[:44]+'0'*16))

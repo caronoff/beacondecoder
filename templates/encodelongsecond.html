@@ -1,0 +1,47 @@
+{% extends "output.html" %}
+{% block title %}UIN message{% endblock %}
+
+{% block head %}
+  {{ super() }}
+<!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+{% endblock %}
+<style type="text/css">
+    .important { color: #336699; }
+</style>
+
+{% block content %}
+
+<div class="form-group" id="id_g008input">
+      <form class="form-horizontal"  action="{{url_for('longSGB')}}"  >
+          <input type="hidden"  name="hex_code" value="{{hexcode}}" style="min-width: 500px;">
+        <h2 class="form-signin-heading">UIN:  {{hexcode}} </h2>
+           <div class="col-lg-2"  style="padding-right: 5px;">
+                                <label class="control-label" for="id_rotatingfield" data-placement="left" data-toggle="tooltip" title="title">Rotating field:</label>
+                                <select class="form-control" id="id_rotatingfield" name="rotatingfield">
+                                <option value="0000">G.008 Objective Requirements</option>
+                                <option value="0001" >In Flight Emergency</option>
+                                <option value="0010">RLS Field</option>
+                                <option value="0011">National Use</option>
+                                <option value="1111">Cancellation Message</option>
+                                </select>
+           </div>
+
+
+        <button class="btn btn-lg btn-primary btn-block" type="submit" title="Complete all fields" id="encodebutton" >Encode Long Message</button>
+        <div class="modal-body" style="strong">
+          <span class="error-log"><br><div id="hexAlert" class="alert alert-danger collapse" role="alert" >
+              <a id="linkClose" href="#" class="close" >&times;</a>
+              <strong>Error! </strong><div id='echoResult'></div></div></span>
+          </div>
+      </form>
+
+</div>
+{{ super() }}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+{% endblock %}
+

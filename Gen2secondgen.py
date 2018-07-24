@@ -7,7 +7,7 @@
 
 import Gen2functions as Func
 import Gen2rotating as rotating
-
+import writebch
 
 class Gen2Error(Exception):
     def __init__(self, value, message):
@@ -23,27 +23,55 @@ class SecondGen(Gen2Error):
     def __init__(self, hexCode=None):
         self.bits = '0' * 250
 
+        if hexCode:
+            self.processHex(hexCode)
     def processHex(self, strhex):
 
         ##All second generation beacon messages must be EXACTLY 250 bits
         ##in length for the program to function properly.
         self.bits = Func.hex2bin(strhex)
+        self.bchstring = ''
         self.tablebin = []
         self.rotatingbin = []
+        self.longitude=self.latitude='na'
+        self.location=(0,0)
+        self.errors=[]
 
 
-        if len(self.bits) == 252 or len(self.bits) == 202 or len(self.bits) == 204 or len(self.bits) == 250 :
+        if len(self.bits) == 252 or len(self.bits) == 204 :
+            self.type="Complete message"
 
+            pbit=self.bits[0:2]
+            if pbit=='00':
+                padding='OK'
+            else:
+                padding = 'ERROR! left padding should be 00'
+                self.errors.append(padding)
 
-            ##Add an additional bit to ensure that bits in array line up with bits in documentation
-            self.bits = "0" + self.bits
+            ##Add an additional bit to ensure that bits in array line up with bits in documentation and only include important bits 1-202
+            self.bits = "0" + self.bits[2:]
+            ##Add the 23 Hex ID to our table
+            self.beaconHexID = self.uinSgb()
+            self.tablebin.append(['',
+                                  '',
+                                  'Beacon 23 Hex ID:',
+                                  self.beaconHexID])
+
+            self.tablebin.append(['left padding',
+                                  pbit,
+                                  '',
+                                  padding])
 
             ##BIT 1-20  Type Approval Certificate #
             self.tac = Func.bin2dec(self.bits[1:21])
+            if self.tac<10000:
+                warn='WARNING!: SGB requires TAC No >=10,000'
+            else:
+                warn=''
             self.tablebin.append(['1-20',
                                   self.bits[1:21],
-                                  'Type Approval Certificate #:',
-                                  str(self.tac)])
+                                  'Type Approval Cert No: '+str(self.tac),
+                                  warn])
 
             ##BIT 21-30 Serial Number
             self.serialNum = Func.bin2dec(self.bits[21:31])
@@ -71,15 +99,15 @@ class SecondGen(Gen2Error):
             self.selfTestStatus = Func.selfTest(self.bits[42])
             self.tablebin.append(['42',
                                   self.bits[42],
-                                  'Self-test function:',
+                                  'Self-test flag:',
                                   self.selfTestStatus])
 
-            ##BIT 43 User cancellation
-            self.cancel = Func.cancellation(self.bits[43])
+            ##BIT 43 Test protocol
+            self.testprotocol = Func.testProtocol(self.bits[43])
             self.tablebin.append(['43',
                                   self.bits[43],
-                                  'User cancellation:',
-                                  self.cancel])
+                                  'Test protocol flag:',
+                                  self.testprotocol])
 
             ##BIT 44-90 Encoded GNSS location
             self.latitude = Func.getlatitude(self.bits[44:67])
@@ -104,20 +132,53 @@ class SecondGen(Gen2Error):
             ################################
             self.vesselIDfill(0,self.bits[91:138])
 
+            ## BIT 138-139  Beacon Type
+            self.tablebin.append(['138-139',
+                                  self.bits[138:140],
+                                  'Beacon Type:',
+                                  Func.getBeaconType(self.bits[138:140])])
+            ## BIT 140  RLS capability
+            self.tablebin.append(['140',
+                                  self.bits[140],
+                                  'RLS capability:',
+                                  Func.rls(self.bits[140])])
 
 
+            ##BIT 140-154 Spare bits
+            if Func.checkones(self.bits[141:155]) and not Func.checkones(self.bits[155:159]):
+                self.tablebin.append(['141-154',
+                                      self.bits[141:155],
+                                      'Spare bits',
+                                      'OK - all bits 1 and rotating field not a cancellation message'])
+            elif Func.checkones(self.bits[141:155]) and Func.checkones(self.bits[155:159]):
+                e='ERROR! - all bits 1 and rotatating field is a cancellation message (for a cancellation message these bits should be set to 0)'
+                self.errors.append(e)
+                self.tablebin.append(['141-154',
+                                      self.bits[141:155],
+                                      'Spare bits',
+                                      e])
 
-            ##BIT 138-154 Spare bits [137-154]
-            if Func.checkones(self.bits[138:155]):
-                self.tablebin.append(['138-154',
-                                      self.bits[138:155],
-                                      'Spare:',
-                                      'OK'])
+            elif Func.checkzeros(self.bits[141:155]) and Func.checkones(self.bits[155:159]):
+                self.tablebin.append(['141-154',
+                                      self.bits[141:155],
+                                      'Spare bits',
+                                      'OK - all bits 0 and rotating field is cancellation message (unless this is a cancellation message, these bits should be set to 1'])
+
+            elif Func.checkzeros(self.bits[141:155]) and not Func.checkones(self.bits[155:159]):
+                e= 'ERROR!- all bits 0 and rotating field is not cancellation message'
+                self.errors.append(e)
+                self.tablebin.append(['141-154',
+                                      self.bits[141:155],
+                                      'Spare bits',
+                                      e])
+
             else:
-                self.tablebin.append(['138-154',
-                                      self.bits[138:155],
-                                      'Spare:',
-                                      'ERROR: Bits 138-154 should be 1s'])
+                e = 'ERROR: Bits 141-154 should be set to all 1 or all 0 in the case that the rotating field is a cancellation message'
+                self.errors.append(e)
+                self.tablebin.append(['141-154',
+                                      self.bits[141:155],
+                                      'Cancellation message status:',
+                                      e])
 
 
 
@@ -155,7 +216,7 @@ class SecondGen(Gen2Error):
 
 
             #########################
-            # Rotating Field 2: RLS #
+            # Rotating Field 2: RLS  #
             #########################
 
             elif self.rotatingID == 2:
@@ -191,7 +252,7 @@ class SecondGen(Gen2Error):
 
 
             ##################################
-            # All other roating fields spare #
+            # All other rotating fields spare #
             ##################################
 
             else:
@@ -206,90 +267,43 @@ class SecondGen(Gen2Error):
 
 
 
-            ####################
-            # BEACON 23 HEX ID #
-            ####################
-            self.hexID = []
-
-            ##Hex ID BIT 1 = fixed binary 1
-            self.hexID.append('1')
-
-            ##Hex ID BIT 2-11 = BITS 31-40 (C/S Country Code)
-            self.hexID.append(self.bits[31:41])
-
-            ##Hex ID BIT 12 = fixed binary 1
-            self.hexID.append('1')
-
-            ##Hex ID BIT 13 = fixed binary 0
-            self.hexID.append('0')
-
-            ##Hex ID BIT 14 = fixed binary 1
-            self.hexID.append('1')
-
-            ##Hex ID BIT 15-34 = BITS 1-20 (C/S TAC No)
-            self.hexID.append(self.bits[1:21])
-
-            ##Hex ID BIT 35-44 = BITS 21-30 (Beacon Serial Number)
-            self.hexID.append(self.bits[21:31])
-
-            ##Hex ID BIT 45-47 = BITS 91-93 (Aircraft/Vessel ID Type)
-            self.hexID.append(self.bits[91:94])
-
-            ##Hex ID BIT 48-91 = BITS 94-137 (Aircraft/Vessel ID)
-            self.hexID.append(self.bits[94:138])
-
-            ##Hex ID BIT 92 = fixed binary 1
-            self.hexID.append('1')
-
-
-            ##Join list together and convert to Hexadecimal
-            self.beaconHexID = Func.bin2hex(''.join(self.hexID))
-
-            ##Add the 23 Hex ID to our table
-            self.tablebin.append(['',
-                                  '',
-                                  'Beacon 23 Hex ID:',
-                                  self.beaconHexID])
 
 
             ####################################
             # 48-BIT BCH ERROR CORRECTING CODE #
             ####################################
-            if len(self.bits) == 253:
+            if len(self.bits) == 251:
                 self.tablebin.append(['203-250',
                                       self.bits[203:],
                                       'Encoded BCH',
                                       'Encoded BCH'])
                 ##Calculate the BCH
                 self.calculatedBCH = Func.calcBCH(self.bits[1:], 0, 202, 250)
-
+                self.bchstring=writebch.calcBCH(self.bits[1:], 0, 202, 250)[1]
                 self.tablebin.append(['Calculated',
                                       self.calculatedBCH,
                                       'Computed',
                                       ''])
                 ##Compare to the BCH in the beacon message
-                self.BCHerrors = Func.errors(self.calculatedBCH, self.bits[203:])
-
-                ##Write the number of errors to our table
-                self.tablebin.append(['',
-                                      '',
-                                      'Number of BCH errors:',
-                                      str(self.BCHerrors)])
-
-                self.tablebin.append(['251-252 (padding)',
-                                      self.bits[251:],
-                                      '00',
-                                      '63 hex code of 252 bits'])
+                bcherr= self.BCHerrors = Func.errors(self.calculatedBCH, self.bits[203:])
+                if bcherr > 0 :
+                    bcherror='COMPUTED BCH DOES NOT MATCH ENCODED BCH!!'
+                    self.errors.append(bcherror)
+                    self.tablebin.append(['','','',bcherror])
 
 
 
 
 
-        elif len(self.bits) == 92:
-            self.type = ('Hex string length of {}. \nBit length of {}. \nThis is a second generation beacon UIN'.format(str(len(strhex)),str(len(self.bits))))
+
+
+        elif len(self.bits) == 92 :
+            self.type = ('Hex string length of {}. \nBit length of {}. \nThis is a second generation beacon hexadecimal identification'.format(str(len(strhex)),str(len(self.bits))))
+            self.type='uin'
             ##Add an additional bit to ensure that bits in array line up with bits in documentation
             self.bits = "0" + self.bits
-            self.latitude ='No latitude data available'
+
+            self.latitude = self.longitude = 'No latitude data available'
             self.tablebin.append(['Unique ID','Second Generation','',''])
             self.tablebin.append(['1',
                                   self.bits[1],
@@ -313,10 +327,14 @@ class SecondGen(Gen2Error):
                                   status_check])
             ##BIT 15-34  Type Approval Certificate #
             self.tac = Func.bin2dec(self.bits[15:35])
+            if self.tac<10000:
+                warn='WARNING! SGB specifications requires TAC No >=10,000'
+            else:
+                warn=''
             self.tablebin.append(['15-34',
                                   self.bits[15:35],
-                                  'Type Approval Certificate #',
-                                  str(self.tac)])
+                                  'Type Approval Cert No: '+str(self.tac),
+                                  warn])
             ##BIT 35-44 Beacon Serial Number
             self.serialNum = Func.bin2dec(self.bits[35:45])
             self.tablebin.append(['35-44',
@@ -324,24 +342,79 @@ class SecondGen(Gen2Error):
                                   'Serial Number',
                                   str(self.serialNum)])
 
+
+            if self.bits[61:] == '0'*32:
+                print('truncated sgb 15 hex id')
+                self.tablebin.append(['45-47', self.bits[45:48], 'Vessel ID Type',Func.getVesselid(self.bits[45:48])])
+                self.tablebin.append(['48-60', self.bits[48:], 'Remaining bits', 'Truncated SGB Hex ID does not allow vessel ID information to be decoded'])
+            else:
             ##BIT 45-91 Aircraft / Vessel ID
-            self.vesselIDfill(46, self.bits[45:92])
+                self.vesselIDfill(46, self.bits[45:92])
 
 
 
 
-            ##BIT 92 Fixed value 1
-            self.tablebin.append(['92',
-                                  self.bits[92],
-                                  'Fixed 1',
-                                  self.bits[92]=='1'])
+                ##BIT 92 Fixed value 1
+                if self.bits[92]=='1':
+                    status_check = 'OK'
+                else:
+                    status_check = 'ERROR'
+
+                self.tablebin.append(['92',
+                                      self.bits[92],
+                                      'Fixed 1',
+                                      status_check])
 
         else:
             self.type = ('Hex string length of ' + str(len(strhex)) + '.'
                          + '\nBit string length of ' + str(len(self.bits)) + '.'
                          + '\nLength of First Gen Beacon Hex String must be 15, 22 or 30'
-                         + '\nLength of Second Gen Beacon Bit String must be 250 bits')
+                         + '\nLength of Second Gen Beacon Bit String must be 204 or 252 bits')
             raise Gen2Error('LengthError', self.type)
+
+
+
+
+    def uinSgb(self):
+        ####################
+        # BEACON 23 HEX ID #
+        ####################
+        hexID = []
+
+        ##Hex ID BIT 1 = fixed binary 1
+        hexID.append('1')
+
+        ##Hex ID BIT 2-11 = BITS 31-40 (C/S Country Code)
+        hexID.append(self.bits[31:41])
+
+        ##Hex ID BIT 12 = fixed binary 1
+        hexID.append('1')
+
+        ##Hex ID BIT 13 = fixed binary 0
+        hexID.append('0')
+
+        ##Hex ID BIT 14 = fixed binary 1
+        hexID.append('1')
+
+        ##Hex ID BIT 15-34 = BITS 1-20 (C/S TAC No)
+        hexID.append(self.bits[1:21])
+
+        ##Hex ID BIT 35-44 = BITS 21-30 (Beacon Serial Number)
+        hexID.append(self.bits[21:31])
+
+        ##Hex ID BIT 45-47 = BITS 91-93 (Aircraft/Vessel ID Type)
+        hexID.append(self.bits[91:94])
+
+        ##Hex ID BIT 48-91 = BITS 94-137 (Aircraft/Vessel ID)
+        hexID.append(self.bits[94:138])
+
+        ##Hex ID BIT 92 = fixed binary 1
+        hexID.append('1')
+
+        ##Join list together and convert to Hexadecimal
+        beaconHexID = Func.bin2hex(''.join(hexID))
+        return beaconHexID
+
     def bitlabel(self,a,b,c):
         return str(int(a)-int(c))+'-'+str(int(b)-int(c))
 
@@ -362,12 +435,12 @@ class SecondGen(Gen2Error):
 
                 self.tablebin.append([self.bitlabel(94,137,deduct_offset),
                                       bits[3:47],
-                                      'Spare:',
+                                      'Vessel ID type is none',
                                       'All 0 - OK'])
             else:
                 self.tablebin.append([self.bitlabel(94, 137,deduct_offset),
                                       bits[3:47],
-                                      'Spare:',
+                                      'Vessel ID type is none',
                                       'Error! Should be all 0'])
         ###########################
         # Vessel 1: Maritime MMSI #
@@ -440,12 +513,12 @@ class SecondGen(Gen2Error):
                                   bits[3:45],
                                   'Aircraft Registration Marking:',
                                   self.tailnum])
-            if Func.checkzeros(bits[45:47]):
+            if bits[45:47]=='00':
                 status_check = 'OK'
             else:
                 status_check = 'ERROR'
             self.tablebin.append([self.bitlabel(136,137,deduct_offset),
-                                  self.bits[45:47],
+                                  bits[45:47],
                                   'Spare should be 0',
                                   status_check])
         ##############################################

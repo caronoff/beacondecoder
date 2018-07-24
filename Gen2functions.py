@@ -121,31 +121,47 @@ def selfTest(selftest_bit):
         selftest_status (str): Decoded self-test status
     """
 
-    if selftest_bit == '1':
+    if selftest_bit == '0':
         selftest_status = 'Normal beacon operation (transmitting a distress)'
     else:
         selftest_status = 'Self-test transmission'
 
     return selftest_status
 
+def getBeaconType(typebinary):
+    return definitions.beacon_type[typebinary]
 
-
-def cancellation(cancel_bit):
-    """Decodes user cancellation bit (Bit 43)
+def testProtocol(prot_bit):
+    """Decodes user test protocol bit (Bit 43)
 
     Args:
-        cancel_bit (str): 1 bit binary
+        test_bit (str): 1 bit binary
     Returns:
-        cancel_status (str): Decoded user cancellation status
+        test_status (str): Decoded user test protocol status
     """
 
-    if cancel_bit == '1':
-        cancel_status = 'User cancellation message'
+    if prot_bit == '1':
+        status = 'Test protocol message'
     else:
-        cancel_status = 'Normal beacon operation (transmitting a distress or self-test message)'
+        status = 'Normal beacon operation'
 
-    return cancel_status
+    return status
 
+def rls(b):
+    """Decodes if rls function enabled (Bit 140)
+
+        Args:
+            test_bit (str): 1 bit binary
+        Returns:
+            test_status (str): Decoded rls function enabled
+        """
+
+    if b == '1':
+        status = 'RLS capability enabled'
+    else:
+        status = 'RLS capability disabled'
+
+    return status
 
 
 def getlatitude(lat):
@@ -523,7 +539,6 @@ def calcBCH(binary, b1start, b1end, b2end):
     Returns:
         bchlist: calculated BCH code
     """
-
     gx = '1110001111110101110000101110111110011110010010111'
     bchlist = list(binary[b1start:b1end] + '0'*(b2end-b1end))
     for i in range(b1end-b1start):
@@ -560,11 +575,18 @@ if __name__ == "__main__":
     btwozeros='000000000000111001101000111101001100100110000110000110010110000110001000101000000100011111000000000000000000000000000000000000000000000001111111111111111100000000010000000011000001101000000000100101100000'
     
     #bc=calcBCH(b4pad,0,207,255)
+    import timeit
+    start = timeit.timeit()
     bc=calcBCH(btwozeros,0,204,252)
+    end = timeit.timeit()
+    print(end - start)
+    print((end - start)*250*249*248*247*246*245/60/60/24/365)
+
+
+    print(bc)
     bfinal='000000000000111001101000111101001100100110000110000110010110000110001000101000000100011111000000000000000000000000000000000000000000000001111111111111111100000000010000000011000001101000000000100101100000101010110000011010101010101010010101111010111001'
     
-    #print bc
-    #print
+
     #print len(b4pad)
     #print bin2hex(bfinal)
     #print hex2bin('f0ac')
