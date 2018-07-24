@@ -1,11 +1,12 @@
 from flask import Flask, flash,jsonify,request, render_template, Markup, redirect, url_for,make_response
-
+from flask_sqlalchemy import SQLAlchemy
 from sgbform import SGB, SGB_g008
 from fgbform import FirstGenForm,FirstGenStd,FirstGenRLS, FirstGenELTDT
 from longfirstgenmsg import encodelongFGB
-from decodefunctions import is_number, dec2bin
+from decodefunctions import is_number
 import re
 import os
+import sys
 import decodehex2
 import definitions
 import requests
