@@ -25,6 +25,14 @@ def webhook():
     db.session.commit()
     return "user created"
 
+@app.route('/fetch/<username>')
+def  fetch(username):
+    results=[]
+    for user in db.session.query(User).filter_by(name='ram'):
+        results.append(user)
+    return results[0].email
+
+
 @app.route('/delete/')
 def delete():
     u = User.query.get(i)
