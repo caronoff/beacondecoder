@@ -47,7 +47,7 @@ def webhook(username):
 @app.route('/fetch/<username>')
 def  fetch(username):
     results=[]
-    for user in db.session.query(User).filter_by(nickname='ram'):
+    for user in db.session.query(User).filter_by(nickname=username):
         results.append(user)
     return results[0].email
 
