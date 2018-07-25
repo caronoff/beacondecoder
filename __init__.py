@@ -36,8 +36,8 @@ COUNTRIES.sort()
 
 @app.route('/add/')
 def webhook():
-    name = 'peter2'
-    email = "peter2@ram.com"
+    name = 'peter3'
+    email = "peter3@ram.com"
     u = User( nickname = name, email = email)
     print("user created", u)
     db.session.add(u)
@@ -49,7 +49,7 @@ def  fetch(username):
     results=[]
     for user in db.session.query(User).filter_by(nickname=username):
         results.append(user)
-    return results[0].email
+    return results[0].email+results[0].id
 
 
 @app.route('/delete/')
