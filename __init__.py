@@ -49,7 +49,7 @@ def  fetch(username):
     results=[]
     for user in db.session.query(User).filter_by(nickname=username):
         results.append(user)
-    return results[0].id
+    return str(results[0].id)
 
 
 @app.route('/delete/')
