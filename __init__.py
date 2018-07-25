@@ -34,7 +34,7 @@ COUNTRIES.sort()
 
 
 
-@app.route('/add')
+@app.route('/add/')
 def webhook():
     name = 'joe'
     email = "joe@ram.com"
