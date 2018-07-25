@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS joomla3_cospas_sarsat_contact_detail_types (
 -- Dumping data for table `joomla3_cospas_sarsat_contact_detail_types`
 --
 
-INSERT INTO joomla3_cospas_sarsat_contact_detail_types (`id`, `name`, `short_name`, `state`, `description`, `model_name`, `ordering`, `created_by`) VALUES
+INSERT INTO joomla3_cospas_sarsat_contact_detail_types (id, name, short_name, state, description, model_name, ordering, created_by) VALUES
 (1, '406 MHz Beacon Registers', '406reg', 1, 'available 24/7 for SAR Services', 'contact_details', 1, 0),
 (2, 'National Contacts for Beacon Matters', '406admin', 1, 'Coding, Registration and Type Approval', 'contact_details', 2, 0),
 (3, 'SPOC', 'spoc', 1, 'SAR Point of Contact', 'contact_details', 3, 0),
