@@ -49,7 +49,7 @@ def  fetch(ident):
     results=[]
     for e in db.session.query(Types).filter_by(id=ident):
         results.append(e)
-    return str(e[0].name)
+    return str(results[0].name)
 
 
 @app.route('/delete/')
