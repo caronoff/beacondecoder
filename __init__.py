@@ -17,7 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://aucgczltspqzuw:bb6151174de15689b394ac16680b84ac62b7d507fc51553d3f78117fca3782d2@ec2-54-235-177-183.compute-1.amazonaws.com:5432/d7upsnkmd5nlv1'
 #os.environ.get['DATABASE_URL']
 db = SQLAlchemy(app)
-from models import User
+from models import User, Types
 
 COUNTRIES=[]
 country=open('countries2.csv')
