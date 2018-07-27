@@ -44,12 +44,12 @@ def webhook():
     db.session.commit()
     return "user created"
 
-@app.route('/fetch/<username>')
-def  fetch(username):
+@app.route('/fetch/<ident>')
+def  fetch(ident):
     results=[]
-    for user in db.session.query(User).filter_by(nickname=username):
-        results.append(user)
-    return str(results[0].id)
+    for e in db.session.query(Types).filter_by(id=ident):
+        results.append(e)
+    return str(e[0].name)
 
 
 @app.route('/delete/')
