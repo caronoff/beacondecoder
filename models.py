@@ -18,7 +18,7 @@ class Types(db.Model):
     short_name=db.Column(db.String(120), index=True, unique=True)
     state=db.Column(db.Integer)
     description=db.Column(db.String(120), index=False, unique=False)
-    model_name=db.String((120), index=False, unique=False)
+    model_name=db.String(db.String(120), index=False, unique=False)
     ordering=db.Column(db.Integer)
     created_by=db.Column(db.Integer)
 
