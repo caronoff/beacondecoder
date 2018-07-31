@@ -326,7 +326,7 @@ def upload_file():
             text = open(filename, 'r+')
             content = text.read()
             text.close()
-            hexlist=['abc','123']
+            hexlist=['004D24053C05B00E2932550000000000007FFFC171EA1D91901ABC06772DC50','A5BD01349FC3E0FA5BD01349FC3E0F']
             return render_template('content.html', text=content,results=hexlist)
 
     return redirect(url_for('decode'))
