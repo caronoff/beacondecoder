@@ -1,5 +1,6 @@
 from flask import Flask, flash,jsonify,request, render_template, Markup, redirect, url_for,make_response
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 from sgbform import SGB, SGB_g008
 from fgbform import FirstGenForm,FirstGenStd,FirstGenRLS, FirstGenELTDT
 from longfirstgenmsg import encodelongFGB
@@ -10,14 +11,20 @@ import sys
 import decodehex2
 import definitions
 import requests
+UPLOAD_FOLDER = '/tmp'
+ALLOWED_EXTENSIONS = set(['txt'])
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 app.secret_key = 'my secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://aucgczltspqzuw:bb6151174de15689b394ac16680b84ac62b7d507fc51553d3f78117fca3782d2@ec2-54-235-177-183.compute-1.amazonaws.com:5432/d7upsnkmd5nlv1'
 #os.environ.get['DATABASE_URL']
 db = SQLAlchemy(app)
 from models import User, Types
+
+
 
 COUNTRIES=[]
 country=open('countries2.csv')
@@ -290,6 +297,26 @@ def download_bch(hexcode):
     response.mimetype = 'text/csv'
     return response
 
+
+@app.route('/batch', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file',
+                                    filename=filename))
+    return redirect(url_for('decode'))
 
 if __name__ == "__main__":
     app.secret_key = 'my secret'
