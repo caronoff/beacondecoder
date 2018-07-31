@@ -8,5 +8,12 @@
 <pre>
 {{ text }}
 </pre>
+
+{% for result in results %}
+  {% for elem in result %}
+    <td>{{elem}}</td>
+  {% endfor %}
+{% endfor %}
+
 </body>
 </html>

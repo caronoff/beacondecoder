@@ -304,9 +304,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
+
 
 @app.route('/batch', methods=['GET', 'POST'])
 def upload_file():
@@ -328,7 +326,8 @@ def upload_file():
             text = open(filename, 'r+')
             content = text.read()
             text.close()
-            return render_template('content.html', text=content)
+            hexlist=['abc','123']
+            return render_template('content.html', text=content,results=hexlist)
 
     return redirect(url_for('decode'))
 
