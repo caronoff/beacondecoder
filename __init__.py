@@ -300,6 +300,9 @@ def download_bch(hexcode):
     response.mimetype = 'text/csv'
     return response
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/batch', methods=['GET', 'POST'])
 def upload_file():
