@@ -11,7 +11,7 @@ import sys
 import decodehex2
 import definitions
 import requests
-UPLOAD_FOLDER = 'tmp'
+UPLOAD_FOLDER = ''
 ALLOWED_EXTENSIONS = set(['txt'])
 
 app = Flask(__name__)
